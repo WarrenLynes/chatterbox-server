@@ -67,7 +67,7 @@ const DATA = [
   }
 ];
 
-module.exports = requestHandler = function (request, response) {
+module.exports.requestHandler = function (request, response) {
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -80,47 +80,64 @@ module.exports = requestHandler = function (request, response) {
 
   log(request);
 
-  var statusCode = 200;
+  var statusCode;
   var body = [];
+  var headers = defaultCorsHeaders;
+  headers['Content-Type'] = 'application/json';
 
-  //error case
-  //listener for error
-  request.on('error', (err) => {
+  if (request.url !== '/classes/messages') {
     statusCode = 404;
-    console.log('error' + err);
-
-  }).on('data', (chunk) => {
-    body.push(chunk);
-  }).on('end', () => {
-    body = JSON.parse(Buffer.concat(body).toString());
-    switch (request.method) {
-      case 'GET':
-      // iterate thru messages back to front
-      // pull 100 messages
-      // write to response
-      case 'POST':
-        Object.assign(body, {
-          message_id: DATA.length + 1,
-          created_at: Date.now(),
-          updated_at: Date.now()
-        });
-        // store request.data
-        DATA.push(body);
-        statusCode = 201;
-    }
-
-    if (statusCode === 404) {
-      response.end('404 error');
-    }
-    var headers = defaultCorsHeaders;
-    headers['Content-Type'] = 'application/json';
-
-    console.log(body);
     response.writeHead(statusCode, headers);
-    response.write(JSON.stringify(body));
     response.end();
-  });
+  } else {
+    //error case
+    //listener for error
+    request.on('error', (err) => {
+      statusCode = 404;
+      console.log('error' + err);
 
+    }).on('data', (chunk) => {
+      body.push(chunk);
+    }).on('end', () => {
+      if (body.length) {
+        body = JSON.parse(Buffer.concat(body).toString());
+      }
+
+      switch (request.method) {
+        case 'GET':
+          // iterate thru messages back to front
+          // pull 100 messages
+          // write to response
+          var arr = [];
+          let i = DATA.length - 1;
+          while (arr.length < 100 && i >= 0) {
+            arr.push(DATA[i]);
+            i--;
+          }
+          body = arr;
+          statusCode = 200;
+          break;
+        case 'POST':
+          Object.assign(body, {
+            message_id: DATA.length + 1,
+            created_at: Date.now(),
+            updated_at: Date.now()
+          });
+          // store request.data
+          DATA.push(body);
+          statusCode = 201;
+      }
+
+      if (statusCode === 404) {
+        response.end('404 error');
+      }
+
+      console.log(body);
+      response.writeHead(statusCode, headers);
+      // response.write();
+      response.end(JSON.stringify(body));
+    });
+  }
   /* writeHead() writes to the request line and headers of the response,
     which includes the status and all headers. */
   /*  Make sure to always call response.end() - Node may not send
