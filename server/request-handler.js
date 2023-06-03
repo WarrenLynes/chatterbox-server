@@ -68,6 +68,8 @@ const DATA = [
 ];
 
 module.exports.requestHandler = function (request, response) {
+
+  console.log(url.parse(req.url).pathname);
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -85,11 +87,8 @@ module.exports.requestHandler = function (request, response) {
   var headers = defaultCorsHeaders;
   headers['Content-Type'] = 'application/json';
 
-  if (request.url !== '/classes/messages') {
-    statusCode = 404;
-    response.writeHead(statusCode, headers);
-    response.end();
-  } else {
+  if (request.url === '/classes/messages') {
+    /* API REQUEST */
     //error case
     //listener for error
     request.on('error', (err) => {
@@ -117,6 +116,7 @@ module.exports.requestHandler = function (request, response) {
           body = arr;
           statusCode = 200;
           break;
+
         case 'POST':
           Object.assign(body, {
             message_id: DATA.length + 1,
@@ -137,6 +137,10 @@ module.exports.requestHandler = function (request, response) {
       // response.write();
       response.end(JSON.stringify(body));
     });
+  } else {
+    statusCode = 404;
+    response.writeHead(statusCode, headers);
+    response.end();
   }
   /* writeHead() writes to the request line and headers of the response,
     which includes the status and all headers. */

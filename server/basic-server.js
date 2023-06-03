@@ -41,6 +41,4 @@ server.listen(port, ip);
 // Ctrl-C on the command line.
 
 
-
-
 //http://127.0.0.1:3000/classes/messages api endpoint
